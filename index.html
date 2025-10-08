@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milla OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* CSS für den klassischen DOS-Look, überschreibt Tailwind wo nötig */
+        :root {
+            --color-bg: #000000;
+            --color-fg: #C0C0C0; /* Light Gray text (Standardfarbe) */
+            --color-header-bg: #0000AA; /* Blue */
+            --color-menu-bg: #C0C0C0; /* Light Gray menu box */
+            --color-menu-fg: #000000; /* Black text in menu */
+            --color-selection-bg: #000000; /* Black for selected item background */
+            --color-selection-fg: #FFFFFF; /* White for selected item text */
+            --color-title: #FFFF00; /* Yellow for menu title */
+        }
+
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-fg);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            user-select: none;
+            overflow: hidden; /* Verhindert Scrollbalken */
+        }
+
+        /* --- Header und Footer Stile getrennt für unterschiedliche Farben --- */
+        
+        .header { /* Blaue Leiste oben */
+            background-color: var(--color-header-bg);
+            color: #FFFFFF;
+            padding: 2px 4px;
+            white-space: pre; /* Behält die Formatierung des Textes bei */
+        }
+        
+        .footer { /* Graue Leiste unten (wie gewünscht) */
+            background-color: var(--color-menu-bg); /* Helle graue Leiste, wie im Menü */
+            color: var(--color-menu-fg); /* Schwarze Schrift auf grauem Hintergrund */
+            padding: 2px 4px;
+            white-space: pre; /* Behält die Formatierung des Textes bei */
+        }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .menu-box {
+            background-color: var(--color-menu-bg);
+            color: var(--color-menu-fg);
+            padding: 2px;
+            border: 1px solid #FFFFFF; /* Simuliert den hellen Rand */
+            box-shadow: 2px 2px 0 0 #404040; /* Simuliert Schattenwurf */
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .menu-title-container {
+            text-align: center;
+            padding: 0 0 10px 0;
+        }
+
+        .menu-title {
+            color: var(--color-title);
+            background-color: var(--color-bg); /* Schwarzer Hintergrund für den gelben Titel */
+            padding: 0 10px;
+            display: inline-block;
+            margin-top: -10px; /* Zieht den Titel über den Rahmen */
+        }
+
+        .menu-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .menu-item {
+            padding: 2px 10px;
+            margin: 2px 0;
+            cursor: pointer;
+        }
+
+        .menu-item.selected {
+            background-color: var(--color-selection-bg);
+            color: var(--color-selection-fg);
+        }
+
+        /* Simuliert einen blinkenden Cursor */
+        .blinking-cursor {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            from, to { color: transparent; }
+            /* Der Cursor ist nun schwarz, damit er auf dem hellgrauen Footer sichtbar ist */
+            50% { color: var(--color-menu-fg); } 
+        }
+
+        /* Simuliertes Alert-Fenster */
+        #messageBox {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--color-menu-bg);
+            color: var(--color-menu-fg);
+            border: 1px solid #FFFFFF;
+            box-shadow: 2px 2px 0 0 #404040;
+            padding: 10px 20px;
+            text-align: center;
+            z-index: 100;
+            display: none;
+            width: 300px;
+        }
+        #messageBox button {
+            background-color: var(--color-header-bg);
+            color: #FFFFFF;
+            border: 1px solid #FFFFFF;
+            padding: 1px 10px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <!-- Header-Leiste (Blaue Leiste oben) -->
+    <div class="header">
+        Milla OS 0.30 Beta - Download Center
+    </div>
+
+    <!-- Hauptinhaltsbereich -->
+    <div class="main-content">
+        <div class="menu-box" id="menuBox">
+            <div class="menu-title-container">
+                <span class="menu-title">Downloads</span>
+            </div>
+            
+            <ul class="menu-list" id="menuList">
+                <!-- Menüpunkte werden per JavaScript eingefügt -->
+            </ul>
+        </div>
+    </div>
+
+    <!-- Fußzeile (Graue Leiste unten) -->
+    <div class="footer">
+        UP/DOWN<span class="blinking-cursor">_</span>=Auswahl ENTER=Download ESC=Zurück
+    </div>
+
+    <!-- Benutzerdefiniertes Alert-Feld -->
+    <div id="messageBox">
+        <p id="messageText"></p>
+        <button onclick="hideMessageBox()">OK</button>
+    </div>
+
+    <script>
+        // Array der Menüpunkte (Download-Links)
+        // BITTE HIER DEINE ECHTEN DOWNLOAD-LINKS EINFÜGEN!
+        const menuItemsData = [
+            { 
+                text: "1. Milla OS 0.30 (.ISO)", 
+                action: "download", 
+                url: "https://github.com/FloriDevs/Current_Relese-MillaOS/archive/refs/heads/main.zip" // <--- ECHTEN LINK HIER EINFÜGEN
+            },
+            { 
+                text: "2. Milla OS 0.30 code", 
+                action: "download", 
+                url: "https://github.com/FloriDevs/MillaOS/archive/refs/heads/main.zip" // <--- ECHTEN LINK HIER EINFÜGEN
+            },
+            { 
+                text: "3. FloriDevs", 
+                action: "download", 
+                url: "https://wearefloridevs.github.io/" // <--- ECHTEN LINK HIER EINFÜGEN
+            },
+            { 
+                text: "4. Close this tab", 
+                action: "exit" 
+            }
+        ];
+
+        let selectedIndex = 0;
+        const menuList = document.getElementById('menuList');
+        const messageBox = document.getElementById('messageBox');
+        const messageText = document.getElementById('messageText');
+
+        /**
+         * Erzeugt die Menü-Einträge im DOM und wählt den ersten aus.
+         */
+        function renderMenu() {
+            menuList.innerHTML = ''; // Liste leeren
+            menuItemsData.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = 'menu-item';
+                li.textContent = item.text;
+                li.dataset.index = index;
+                li.onclick = () => selectItem(index);
+                
+                if (index === selectedIndex) {
+                    li.classList.add('selected');
+                }
+
+                menuList.appendChild(li);
+            });
+        }
+
+        /**
+         * Wählt einen Menüpunkt aus und aktualisiert die Anzeige.
+         * @param {number} newIndex Der Index des neu auszuwählenden Elements.
+         */
+        function selectItem(newIndex) {
+            // Index-Grenzen prüfen
+            if (newIndex >= 0 && newIndex < menuItemsData.length) {
+                // Vorheriges Element deselektieren
+                const prevItem = menuList.querySelector(`.menu-item[data-index="${selectedIndex}"]`);
+                if (prevItem) {
+                    prevItem.classList.remove('selected');
+                }
+                
+                // Neues Element selektieren
+                selectedIndex = newIndex;
+                const newItem = menuList.querySelector(`.menu-item[data-index="${selectedIndex}"]`);
+                if (newItem) {
+                    newItem.classList.add('selected');
+                }
+            }
+        }
+
+        /**
+         * Führt die Aktion für den aktuell ausgewählten Menüpunkt aus.
+         */
+        function executeAction() {
+            const selectedItem = menuItemsData[selectedIndex];
+            let message = "";
+
+            if (selectedItem.action === 'download' && selectedItem.url) {
+                // Wenn eine URL vorhanden ist, starte den Download.
+                window.location.href = selectedItem.url;
+                
+                // Meldung für den Benutzer (nachdem der Download gestartet wurde)
+                message = `Starte Download von ${selectedItem.text.substring(3).trim()}...`;
+            } else {
+                switch (selectedItem.action) {
+                    case 'exit':
+                        window.close()
+                        break;
+                    default:
+                        window.close()
+                    
+                }
+            }
+
+            showMessageBox(message);
+        }
+
+        /**
+         * Zeigt eine Meldungsbox im DOS-Stil an.
+         * @param {string} text Der anzuzeigende Text.
+         */
+        function showMessageBox(text) {
+            messageText.textContent = text;
+            messageBox.style.display = 'block';
+        }
+
+        /**
+         * Versteckt die Meldungsbox.
+         */
+        function hideMessageBox() {
+            messageBox.style.display = 'none';
+        }
+
+        // Tastatur-Event-Handler
+        document.addEventListener('keydown', (event) => {
+            if (messageBox.style.display === 'block') {
+                // Wenn die Box sichtbar ist, nur "OK" oder ESC/Enter zulassen
+                if (event.key === 'Enter' || event.key === 'Escape') {
+                    event.preventDefault();
+                    hideMessageBox();
+                }
+                return;
+            }
+
+            switch (event.key) {
+                case 'ArrowUp':
+                    event.preventDefault();
+                    selectItem(selectedIndex > 0 ? selectedIndex - 1 : menuItemsData.length - 1);
+                    break;
+                case 'ArrowDown':
+                    event.preventDefault();
+                    selectItem(selectedIndex < menuItemsData.length - 1 ? selectedIndex + 1 : 0);
+                    break;
+                case 'Enter':
+                    event.preventDefault();
+                    executeAction();
+                    break;
+                case 'Escape':
+                    event.preventDefault();
+                    showMessageBox("ESC gedrückt. Zurück zum Hauptmenü? (Funktion nicht implementiert)");
+                    break;
+                // Nummerntasten für direkten Sprung
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                    event.preventDefault();
+                    const numIndex = parseInt(event.key) - 1;
+                    if (numIndex >= 0 && numIndex < menuItemsData.length) {
+                        selectItem(numIndex);
+                        executeAction();
+                    }
+                    break;
+            }
+        });
+
+        // Initialisierung des Menüs beim Laden der Seite
+        window.onload = () => {
+            renderMenu();
+            // Stellt sicher, dass das erste Element beim Laden ausgewählt ist
+            selectItem(0);
+        };
+    </script>
+</body>
+</html>
